@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {Platform, StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Button} from 'react-native';
-import Video from 'react-native-video'
+import Video from 'react-native-video';
+import firebase from 'react-native-firebase';
 
 export default class MusicPlayer extends Component {
 
@@ -20,7 +21,8 @@ export default class MusicPlayer extends Component {
     this.state = {
       mediaIsPlaying: false,
       mediaTrackProgressDuration: "0:00",
-      mediaTrackPlayableDuration: "-:--"
+      mediaTrackPlayableDuration: "-:--",
+      mediaTagged: false
     }
 
     // this.mediaOnLoad = this.mediaOnLoad.bind(this)
@@ -34,6 +36,13 @@ export default class MusicPlayer extends Component {
       this.setState({
         mediaTrackProgressDuration: currentDuration
       })
+      console.log(trackProgressInfo.currentTime/60)
+      if (trackProgressInfo.currentTime/60 > 1 && !this.state.mediaTagged) {
+        this.setState({
+          mediaTagged : false
+        })
+        //tag song link PUT
+      }
     }
   }
 
@@ -56,11 +65,22 @@ export default class MusicPlayer extends Component {
     const sign = minutes < 0 ? "-" : "";
     const min = Math.floor(Math.abs(minutes));
     const sec = Math.floor((Math.abs(minutes) * 60) % 60);
-    return sign + (min < 10 ? "" : "0") + min + ":" + (sec < 10 ? "0" : "") + sec;
+    return sign + min + ":" + (sec < 10 ? "0" : "") + sec;
   }
 
   componentDidMount() {
     console.log(this.props.navigation.state.params)
+    // if strain and feeling grab this, if aow grab that
+    //file structure
+    //strain:{feelings:{songList}}
+    //artistOfTheWeek:{songlist}
+    firebase.auth()
+  .signInAnonymously()
+  .then(credential => {
+    if (credential) {
+      console.log('default app user ->', credential.user.toJSON());
+    }
+  });
   }
 
   render () {
@@ -106,7 +126,7 @@ export default class MusicPlayer extends Component {
         }
         <Text style={styles.mediaDuration}>{this.state.mediaTrackProgressDuration} / {this.state.mediaTrackPlayableDuration !== 0 && this.state.mediaTrackPlayableDuration}</Text> 
 
-      <Video source={{uri: 'http://russprince.com/hobbies/files/13%20Beethoven%20-%20Fur%20Elise.mp3' }} 
+      <Video source={{uri: 'https://firebasestorage.googleapis.com/v0/b/wza-backend.appspot.com/o/%EF%BC%A8%EF%BC%A9%EF%BC%A7%EF%BC%A8%E3%80%80%EF%BC%A1%EF%BC%B4%E3%80%80%EF%BC%B7%EF%BC%AF%EF%BC%B2%EF%BC%AB%203.mp3?alt=media&token=a2941150-9175-4a1f-a3dd-12a18c2f535c' }} 
         ref="audio"
         volume={1.0}
         muted={false}

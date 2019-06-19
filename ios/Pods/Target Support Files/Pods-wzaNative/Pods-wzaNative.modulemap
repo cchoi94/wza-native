@@ -1,0 +1,6 @@
+framework module Pods_wzaNative {
+  umbrella header "Pods-wzaNative-umbrella.h"
+
+  export *
+  module * { export * }
+}
