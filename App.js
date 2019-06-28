@@ -52,8 +52,8 @@ class Home extends Component {
         <Text style={styles.heroTitle}>
           What are you hitting?
         </Text>
-        <View style={styles.strainBtnContainer}>
-          <Button title="Sativa" titleStyle={styles.btnTitleStyle} buttonStyle={styles.buttonStyle}
+        <View style={styles.strainButtonContainer}>
+          <Button title="Sativa" titleStyle={styles.buttonTitleStyle} buttonStyle={styles.buttonStyle}
             ViewComponent={LinearGradient}
             linearGradientProps={{
               colors: ['#A166AB','#EF4E7B','#F37055','#F79533'],
@@ -63,7 +63,7 @@ class Home extends Component {
             onPress={() => this.props.navigation.navigate('WzaSelector', {
             strain: 'sativa'
           })} />
-          <Button title="Indica" titleStyle={styles.btnTitleStyle} buttonStyle={styles.buttonStyle}
+          <Button title="Indica" titleStyle={styles.buttonTitleStyle} buttonStyle={styles.buttonStyle}
             ViewComponent={LinearGradient}
             linearGradientProps={{
               colors: ['#6FBA82','#07B39B','#1098AD','#5073B8'],
@@ -72,6 +72,10 @@ class Home extends Component {
             }} 
             onPress={() => this.props.navigation.navigate('WzaSelector', {
             strain: 'indica'
+          })} />
+          <Button title="Artist Of The Week" titleStyle={[styles.buttonTitleStyle, styles.aowButtonTitleStyle]} buttonStyle={[styles.buttonStyle, styles.aowButtonStyle]}
+            onPress={() => this.props.navigation.navigate('MusicPlayer', {
+            artist_of_the_week: true
           })} />
         </View>
       </ScrollView>
@@ -84,6 +88,7 @@ const styles = StyleSheet.create({
   homeContainer: {
     flex: 0.5,
     justifyContent: 'center',
+    padding: 8
   },
   heroTitle: {
     flex: 0.25,
@@ -91,10 +96,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#fff'
   },
-  strainBtnContainer: {
+  strainButtonContainer: {
     flex: 0.25
   },
-  btnTitleStyle: {
+  buttonTitleStyle: {
     fontSize: 32,
     textTransform: 'uppercase',
     fontWeight: '900'
@@ -104,6 +109,12 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 40,
     marginTop: 20,
+  },
+  aowButtonStyle: {
+    backgroundColor: '#fff'
+  },
+  aowButtonTitleStyle: {
+    color: '#1D1E25'
   }
 })
 

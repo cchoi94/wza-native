@@ -1,6 +1,8 @@
 # Uncomment the next line to define a global platform for your project
   # platform :ios, '9.0'
+  pod 'Firebase'
   pod 'Firebase/Core'
+  pod 'Firebase/Database'
 
 target 'wzaNative' do
   pod 'AppCenter/Crashes', '~> 2.0.1'

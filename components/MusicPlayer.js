@@ -19,10 +19,15 @@ export default class MusicPlayer extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      data: [],
+      selectedTrack: {},
+      tracksArray: null,
+      trackNumber: null,
       mediaIsPlaying: false,
       mediaTrackProgressDuration: "0:00",
       mediaTrackPlayableDuration: "-:--",
-      mediaTagged: false
+      mediaTagged: false,
+      repeatOnBack: false
     }
 
     // this.mediaOnLoad = this.mediaOnLoad.bind(this)
@@ -30,18 +35,24 @@ export default class MusicPlayer extends Component {
   }
 
   mediaProgress = (trackProgressInfo) => {
-    console.log(trackProgressInfo)
     if (trackProgressInfo) {
       const currentDuration = this.minTommss(trackProgressInfo.currentTime/60)
       this.setState({
         mediaTrackProgressDuration: currentDuration
       })
-      console.log(trackProgressInfo.currentTime/60)
       if (trackProgressInfo.currentTime/60 > 1 && !this.state.mediaTagged) {
         this.setState({
           mediaTagged : false
         })
         //tag song link PUT
+      }
+      if (trackProgressInfo.currentTime > 2) {
+
+      console.log(trackProgressInfo.currentTime)
+        
+        this.setState({
+          repeatOnBack: true
+        })
       }
     }
   }
@@ -68,29 +79,143 @@ export default class MusicPlayer extends Component {
     return sign + min + ":" + (sec < 10 ? "0" : "") + sec;
   }
 
-  componentDidMount() {
-    console.log(this.props.navigation.state.params)
-    // if strain and feeling grab this, if aow grab that
-    //file structure
-    //strain:{feelings:{songList}}
-    //artistOfTheWeek:{songlist}
-    firebase.auth()
-  .signInAnonymously()
-  .then(credential => {
-    if (credential) {
-      console.log('default app user ->', credential.user.toJSON());
+  shuffle = (a) => {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
     }
-  });
+    return a;
+  }
+
+  getRandomTrackArray = () => {
+    // let playedTrackNumbers = this.state.playedTrackNumbers
+    
+    // let randomTrackNumber = Math.floor(Math.random() * Math.floor(this.state.data.playlist.length - 1))
+
+    if (!this.state.tracksArray || this.state.trackNumber === this.state.tracksArray.length - 1) {
+      let tracksArray = Array.apply(null, {length: (this.state.data.playlist.length)}).map(Number.call, Number)
+
+      this.shuffle(tracksArray)
+
+      this.setState({
+        tracksArray
+      }, () => {this.fetchSong()})
+    } else {
+      this.fetchSong()
+    }
+
+
+    // if (playedTrackNumbers.includes(randomTrackNumber)) {
+    //   this.getRandomTrackArray()
+    // } else {
+      // playedTrackNumbers.push(randomTrackNumber)
+      // this.setState({
+      //   playedTrackNumbers
+      // })
+    //   return randomTrackNumber
+    // }
+  }
+
+  fetchSong = () => {
+
+    let trackNumber = 0
+    if (this.state.trackNumber || this.state.trackNumber === 0) {
+      trackNumber = this.state.trackNumber + 1
+    }
+
+    let selectedTrack = this.state.data.playlist[this.state.tracksArray[trackNumber]]
+
+    if (trackNumber === this.state.tracksArray.length) {
+      this.setState({
+        trackNumber: null,
+        tracksArray: null
+      })
+      this.prepTrack()
+    } else {
+      this.setState({
+        selectedTrack,
+        trackNumber,
+        mediaTrackProgressDuration: "0:00"
+      })
+    }
+  }
+
+  getSongData = (ref) => {
+    firebase.database().ref(ref).once('value', (snapshot) => {
+        this.setState({
+          data: snapshot.val()
+        }, () => {
+          if (this.state.data) {
+            Object.values(this.state.data).forEach(artist => {
+              if (artist.is_live) {
+                this.setState({
+                  data: artist
+                }, this.getRandomTrackArray)
+              }
+            })
+          }
+        })
+      });
+  }
+
+  onBackBtn = () => {
+    if (this.state.repeatOnBack || this.state.trackNumber === 0) {
+
+    this.player.seek(0)
+
+    this.setState({
+      repeatOnBack: false
+    })
+
+    } else {
+      let trackNumber = 0
+      
+      trackNumber = this.state.trackNumber - 1
+
+      let selectedTrack = this.state.data.playlist[this.state.tracksArray[trackNumber]]
+
+      this.setState({
+        selectedTrack,
+        repeatOnBack: false,
+        trackNumber,
+        mediaTrackProgressDuration: "0:00"
+      })
+    }
+  }
+
+  prepTrack = () => {
+    this.setState({
+      mediaTrackProgressDuration: "0:00"
+    }, () => {
+      if (this.props.navigation.state.params.artist_of_the_week) {
+        this.getSongData('/aow')
+      }
+    })
+  }
+
+  componentDidMount() {
+    this.prepTrack()
   }
 
   render () {
+    const {selectedTrack} = this.state
     return (
       <ScrollView contentContainerStyle={styles.mediaContainer}>
         <Text style={styles.mediaTitle}>
-          Music Title
+          {selectedTrack.title}
+        </Text>
+        <Text style={styles.mediaArtist}>
+          {selectedTrack.artist}
         </Text>
         {this.state.mediaIsPlaying ?
           <View style={styles.mediaPlayerControls}>
+            <TouchableOpacity style={styles.mediaForwardBtn} onPress = {() => this.onBackBtn()}>
+                <Image
+                  style={{width: 50, height: 50}}
+                  source={this.props.navigation.state.params.strain === 'sativa' ?
+                    require('../assets/warmBackBtn.png') : require('../assets/coldBackBtn.png')}
+                />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.mediaPlayBtn} onPress={() => this.onToggleMediaPlay()}>
               <Image
                 style={{width: 100, height: 100}}
@@ -98,7 +223,7 @@ export default class MusicPlayer extends Component {
                   require('../assets/warmPauseBtn.png') :  require('../assets/coldPauseBtn.png')}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.mediaPauseBtn}>
+            <TouchableOpacity style={styles.mediaForwardBtn} onPress = {() => this.fetchSong()}>
                 <Image
                   style={{width: 50, height: 50}}
                   source={this.props.navigation.state.params.strain === 'sativa' ?
@@ -108,6 +233,13 @@ export default class MusicPlayer extends Component {
           </View>
         :
           <View style={styles.mediaPlayerControls}>
+            <TouchableOpacity style={styles.mediaForwardBtn} onPress = {() => this.onBackBtn()}>
+                  <Image
+                    style={{width: 50, height: 50}}
+                    source={this.props.navigation.state.params.strain === 'sativa' ?
+                      require('../assets/warmBackBtn.png') : require('../assets/coldBackBtn.png')}
+                  />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.mediaPlayBtn} onPress={() => this.onToggleMediaPlay()}>
               <Image
                 style={{width: 100, height: 100}}
@@ -115,7 +247,7 @@ export default class MusicPlayer extends Component {
                   require('../assets/warmPlayBtn.png') : require('../assets/coldPlayBtn.png')}
               />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.mediaPauseBtn}>
+            <TouchableOpacity style={styles.mediaForwardBtn} onPress = {() => this.fetchSong()}>
               <Image
                 style={{width: 50, height: 50}}
                 source={this.props.navigation.state.params.strain === 'sativa' ?
@@ -126,17 +258,23 @@ export default class MusicPlayer extends Component {
         }
         <Text style={styles.mediaDuration}>{this.state.mediaTrackProgressDuration} / {this.state.mediaTrackPlayableDuration !== 0 && this.state.mediaTrackPlayableDuration}</Text> 
 
-      <Video source={{uri: 'https://firebasestorage.googleapis.com/v0/b/wza-backend.appspot.com/o/%EF%BC%A8%EF%BC%A9%EF%BC%A7%EF%BC%A8%E3%80%80%EF%BC%A1%EF%BC%B4%E3%80%80%EF%BC%B7%EF%BC%AF%EF%BC%B2%EF%BC%AB%203.mp3?alt=media&token=a2941150-9175-4a1f-a3dd-12a18c2f535c' }} 
-        ref="audio"
+      <Video source={{uri: selectedTrack.url }} 
+        ref={(ref) => {
+         this.player = ref
+        }}  
         volume={1.0}
         muted={false}
         repeat={true}
         paused={!this.state.mediaIsPlaying}
         onProgress={this.mediaProgress}
+        ignoreSilentSwitch="ignore"
+        onSeek={this.onSeek}
+        allowsExternalPlayback={true}
         playInBackground={true}
         playWhenInactive={true} 
         onError={this.videoError}               
         // style={styles.backgroundVideo}
+        onEnd={this.fetchSong}
         onLoad={this.mediaOnLoad} />
       </ScrollView>
     )
@@ -162,16 +300,23 @@ var styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position:'relative',
-    left: 45
   },
   mediaTitle: {
     fontSize: 24,
-    color: '#fff'
+    color: '#fff',
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  mediaArtist: {
+    fontSize: 24,
+    color: '#fff',
+    color: '#D9BC7B'
   },
   mediaPlayBtn: {
-    marginRight: 40
+    marginRight: 40,
+    marginLeft: 40
   },
-  mediaPauseBtn: {
+  mediaForwardBtn: {
   },
   mediaDuration: {
     fontSize: 24,
