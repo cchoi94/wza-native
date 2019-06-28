@@ -46,7 +46,7 @@ export default class MusicPlayer extends Component {
         })
         //tag song link PUT
       }
-      if (trackProgressInfo.currentTime > 2) {
+      if (trackProgressInfo.currentTime > 1) {
 
       console.log(trackProgressInfo.currentTime)
         
